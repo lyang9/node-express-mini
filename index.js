@@ -10,6 +10,7 @@ const db = require('./data/db.js');
 
 const server = express(); // creates the server
 
+server.use(express.json());
 server.use(cors()); // this needed to connect from react
 
 server.get('/', (req, res) => { 
@@ -23,6 +24,29 @@ server.get('/api/users', (req, res) => {
     res.json(users);
   })
   .catch(err => res.send(err));
+});
+
+server.get('/api/users/:id', (req, res) => {
+  const id = req.params.id;
+  db.findById(id)
+    .then(user => {
+      res.json(user);
+    })
+    .catch(err => {
+      res.json(err);
+    });
+});
+
+server.post('/api/users', (req, res) => {
+  const { name, bio } = req.body;
+  db
+    .insert({ name, bio })
+    .then(response => {
+      res.send(response);
+    })
+    .catch(error => {
+      res.json(error);
+    });
 });
 
 // watch for traffic in a particular computer port
