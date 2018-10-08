@@ -10,7 +10,7 @@ const db = require('./data/db.js');
 
 const server = express(); // creates the server
 
-server.use(express.json());
+server.use(express.json()); // formatting our req.body obj.
 server.use(cors()); // this needed to connect from react
 
 server.get('/', (req, res) => { 
@@ -19,6 +19,7 @@ server.get('/', (req, res) => {
 });
 
 server.get('/api/users', (req, res) => {
+  console.log(req.query);
   db.find().then(users => {
     console.log('\n** users **', users);
     res.json(users);
@@ -39,14 +40,44 @@ server.get('/api/users/:id', (req, res) => {
 
 server.post('/api/users', (req, res) => {
   const { name, bio } = req.body;
-  db
-    .insert({ name, bio })
-    .then(response => {
-      res.send(response);
+  const newUser = { name, bio };
+  db.insert(newUser)
+    .then(userId => {
+      const { id } = userId;
+      db.findById(id).then(user => {
+        console.log(user);
+        if (!user) {
+          return res
+            .status(422)
+            .send({ Error: `User does not exist by that id ${userId}` });
+        }
+        res.status(201).json(user);
+      });
     })
-    .catch(error => {
-      res.json(error);
-    });
+    .catch(err => console.error(err));
+});
+
+server.delete('/api/users/:id', (req, res) => {
+  const { id } = req.params;
+  db.remove(id)
+    .then(removedUser => {
+      console.log(removedUser);
+      res.status(200).json(removedUser);
+    })
+    .catch(err => console.error(err));
+});
+
+server.put('/api/users/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, bio } = req.body;
+  const newUser = { name, bio };
+  console.log(newUser);
+  db.update(id, newUser)
+    .then(user => {
+      console.log(user);
+      res.status(200).json(user);
+    })
+    .catch(err => console.error(err));
 });
 
 // watch for traffic in a particular computer port
